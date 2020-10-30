@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -79,14 +79,13 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/takeOffLandBt"
-        app:layout_constraintTop_toBottomOf="@id/info"
-        tools:layout_editor_absoluteY="38dp"></com.parrot.drone.groundsdk.stream.GsdkStreamView>
+        app:layout_constraintTop_toBottomOf="@id/info"></com.parrot.drone.groundsdk.stream.GsdkStreamView>
 
     <Button
-        android:id="@+id/takeOffLandBt6"
+        android:id="@+id/takeOffLandBt"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:enabled="false"
         android:text="take off"
         app:layout_constraintBottom_toBottomOf="parent" />
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

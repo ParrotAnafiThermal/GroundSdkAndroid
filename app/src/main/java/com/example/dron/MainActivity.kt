@@ -70,7 +70,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setSupportActionBar(findViewById(R.id.toolbar))
 
         // Get user interface instances.
         streamView = findViewById(R.id.stream_view)
@@ -90,10 +89,6 @@ class MainActivity : AppCompatActivity() {
         // All references taken are linked to the activity lifecycle and
         // automatically closed at its destruction.
 
-        findViewById<FloatingActionButton>(R.id.fab).setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show()
-        }
     }
 
     override fun onStart() {
