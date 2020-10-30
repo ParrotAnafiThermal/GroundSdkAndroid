@@ -208,7 +208,7 @@ class MainActivity : AppCompatActivity() {
 
             it?.let {
                 // Update drone battery level view.
-                droneBatteryTxt.text = getString(R.string.PERCENTAGE, it.batteryLevel)
+                droneBatteryTxt.text = getString(R.string.percentage, it.batteryLevel)
             }
         }
     }
