@@ -1,9 +1,9 @@
 package com.parrot.hellodrone
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import com.parrot.drone.groundsdk.GroundSdk
 import com.parrot.drone.groundsdk.ManagedGroundSdk
 import com.parrot.drone.groundsdk.Ref
@@ -11,12 +11,17 @@ import com.parrot.drone.groundsdk.device.DeviceState
 import com.parrot.drone.groundsdk.device.Drone
 import com.parrot.drone.groundsdk.device.RemoteControl
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo
+import com.parrot.drone.groundsdk.device.peripheral.MainCamera
 import com.parrot.drone.groundsdk.device.peripheral.StreamServer
 import com.parrot.drone.groundsdk.device.peripheral.stream.CameraLive
 import com.parrot.drone.groundsdk.device.pilotingitf.Activable
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf
 import com.parrot.drone.groundsdk.facility.AutoConnection
 import com.parrot.drone.groundsdk.stream.GsdkStreamView
+import org.json.JSONArray
+import java.net.HttpURLConnection
+import java.net.URL
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,6 +42,8 @@ class MainActivity : AppCompatActivity() {
     private var liveStreamRef: Ref<CameraLive>? = null
     /** Current drone live stream. */
     private var liveStream: CameraLive? = null
+    /** Take pic */
+    private var takepicRef: Ref<MainCamera>? = null
 
     //Remote control:
     /** Current remote control instance. */
@@ -59,6 +66,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rcBatteryTxt: TextView
     /** Take off / land button. */
     private lateinit var takeOffLandBt: Button
+    /** Take pic button */
+    private lateinit var takepicBt: Button
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,12 +81,17 @@ class MainActivity : AppCompatActivity() {
         rcStateTxt = findViewById(R.id.rcStateTxt)
         rcBatteryTxt = findViewById(R.id.rcBatteryTxt)
         takeOffLandBt = findViewById(R.id.takeOffLandBt)
+        takepicBt = findViewById(R.id.uploadmedia)
         takeOffLandBt.setOnClickListener {onTakeOffLandClick()}
+        takepicBt.setOnClickListener {takepicClick()}
+
 
         droneStateTxt.text = DeviceState.ConnectionState.DISCONNECTED.toString()
         rcStateTxt.text = DeviceState.ConnectionState.DISCONNECTED.toString()
 
         groundSdk = ManagedGroundSdk.obtainSession(this)
+
+
     }
 
     override fun onStart() {
@@ -87,6 +103,12 @@ class MainActivity : AppCompatActivity() {
             it?.let{
                 if (it.status != AutoConnection.Status.STARTED) {
                     it.start()
+                   // sendGet()
+                    val url = "http://192.168.42.1/api/v1/media/medias"
+
+                    println("hah")
+                    doInBackground()
+                    println("hah2")
                 }
                 if (drone?.uid != it.drone?.uid) {
                     if(drone != null) {
@@ -171,6 +193,7 @@ class MainActivity : AppCompatActivity() {
             if (streamServer != null) {
                 if(!streamServer.streamingEnabled()) {
                     streamServer.enableStreaming(true)
+                    //sendGet()
                 }
                 if (liveStreamRef == null) {
                     liveStreamRef = streamServer.live { liveStream ->
@@ -196,6 +219,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+
 
     //Monitor current drone state
     private fun monitorDroneState() {
@@ -270,6 +295,59 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+//    private class MainCameraRefRunnable:Runnable {
+//        private val mainCameraRef:Ref<MainCamera> = null
+//        internal fun setMainCameraRef(mainCameraRef:Ref<MainCamera>) {
+//            this.mainCameraRef = mainCameraRef
+//        }
+//        public override fun run() {
+//            if (mainCameraRef != null) mainCameraRef.close()
+//        }
+//    }
+
+    private fun takepicClick() {
+        takepicRef?.get()?.let { pic ->
+
+//            if (pic.canStartPhotoCapture()) {
+//                pic.startPhotoCapture()
+//            } else if (pic.canStopPhotoCapture()) {
+//                pic.stopPhotoCapture()
+//            }
+        }
+    }
+
+    /**
+    cameraImage.setOnClickListener({ view->
+        val camera = ardrone.getMainCamera()
+        if (camera == null) return@cameraImage.setOnClickListener
+        if (camera.mode().getAvailableValues().contains(MainCamera.Mode.PHOTO))
+        {
+            val takePhotoRunnable = MainCameraRefRunnable()
+            takePhotoRunnable.setMainCameraRef(ardrone.getPeripheral(MainCamera::class.java, object:Ref.Observer<MainCamera>() {
+                private val posted:Boolean = false
+                fun onChanged(@Nullable cam:MainCamera) {
+                    if (cam != null && cam.mode().getValue() === MainCamera.Mode.PHOTO && !posted)
+                    {
+                        if (cam.canStartPhotoCapture())
+                        {
+                            posted = true
+                            cam.startPhotoCapture()
+                            Handler().post(takePhotoRunnable)
+                        }
+                        else if (cam.canStopPhotoCapture())
+                        {
+                            posted = true
+                            cam.stopPhotoCapture()
+                            Handler().post(takePhotoRunnable)
+                        }
+                    }
+                }
+            }))
+            if (camera.mode().getValue() !== MainCamera.Mode.PHOTO)
+                camera.mode().setValue(MainCamera.Mode.PHOTO)
+        } })
+*/
+
     //Resets remote user interface part
     private fun resetRcUi() {
         rcStateTxt.text = DeviceState.ConnectionState.DISCONNECTED.toString()
@@ -309,4 +387,172 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+
+
+    private fun doInBackground(): String {
+        var text: String
+        text = ""
+        var listdata: List<Data>
+        val thread = Thread(Runnable {
+            try {
+                val connection = URL("http://192.168.42.1/api/v1/media/medias").openConnection() as HttpURLConnection
+                try{
+                    connection.connect()
+                    text = connection.inputStream.use {it.reader().use{reader -> reader.readText()}}
+
+                }
+                finally {
+                    connection.disconnect()
+                }
+                // handleJson(result)
+                println(text)
+                           }
+                catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        )
+
+        thread.start()
+        //listdata = handleJson(text)
+
+        return text
+
+    }
+
+    private fun handleJson(jsonString: String): List<Data> {
+        val jsonArray = JSONArray(jsonString)
+        val list = ArrayList<Data>()
+        val list2 = ArrayList<Resources>()
+
+        var x = 0
+        var y = 0
+        while(x < jsonArray.length()) {
+
+            val jsonObject = jsonArray.getJSONObject(x)
+            val temp = jsonObject.getJSONArray("resources")
+
+            while(y < temp.length()){
+                val temp2 = temp.getJSONObject(y)
+
+                list2.add(Resources(
+                    temp2.getString("media_id"),
+                    temp2.getString("resource_id"),
+                    temp2.getString("type"),
+                    temp2.getString("format"),
+                    temp2.getString("datetime"),
+                    temp2.getInt("size"),
+                    temp2.getString("url"),
+                    temp2.getString("storage"),
+                    temp2.getInt("width"),
+                    temp2.getInt("height"),
+                    temp2.getString("thumbnail"),
+                    temp2.getString("video_mode"),
+                    temp2.getString("replay_url"),
+                    temp2.getInt("duration")
+                ))
+            }
+
+            list.add(Data(
+                jsonObject.getString("media_id"),
+                jsonObject.getString("type"),
+                jsonObject.getString("datetime"),
+                jsonObject.getInt("size"),
+                jsonObject.getString("video_mode"),
+                jsonObject.getInt("duration"),
+                jsonObject.getString("run_id"),
+                jsonObject.getString("thumbnail"),
+                list2
+            ))
+
+            x++
+        }
+        println(list.first().resources.first().url)
+        return list
+    }
+
+//    fun sendGet() {
+//        val response = try {
+//                    println("DZIALA1")
+//
+//            URL("http://google.co.uk")
+//                .openStream()
+//                .bufferedReader()
+//                .use { it.readText() }
+//
+//        }
+//        finally {}
+//                println("DZIALA2")
+//
+//        println(response)
+//        println("DZIALA")
+//        with(url.openConnection() as HttpURLConnection) {
+//            requestMethod = "GET"  // optional default is GET
+//
+//            println("\nSent 'GET' request to URL : $url; Response Code : $responseCode")
+//
+//
+//            inputStream.bufferedReader().use {
+//                it.lines().forEach { line ->
+//                    println(line)
+//                }
+//            }
+//        }
+//    }
+
+
+//    inner class AsyncTaskHandleJson : AsyncTask<String, String, String>() {
+//        override fun doInBackground(vararg url: String?): String {
+//            var text: String
+//            val connection = URL(url[0]).openConnection() as HttpURLConnection
+//            try{
+//                connection.connect()
+//                text = connection.inputStream.use {it.reader().use{reader -> reader.readText()}}
+//
+//            }
+//            finally {
+//                connection.disconnect()
+//            }
+//            println(text)
+//            return text
+//        }
+//
+//        override fun onPostExecute(result: String?) {
+//            super.onPostExecute(result)
+//            handleJson(result)
+//
+//        }
+//
+//}
+//
+//    inner class AsyncTaskHandleJson {
+//         fun doInBackground(url: String?): String {
+//            var text: String
+//            val connection = URL(url).openConnection() as HttpURLConnection
+//            try{
+//                connection.connect()
+//                text = connection.inputStream.use {it.reader().use{reader -> reader.readText()}}
+//
+//            }
+//            finally {
+//                connection.disconnect()
+//            }
+//            // handleJson(result)
+//            println(text)
+//            return text
+//
+//        }
+
+//        override fun onPostExecute(result: String?) {
+//            super.onPostExecute(result)
+//            handleJson(result)
+//
+//        }
+
+//    }
+
+
+
+
 }
