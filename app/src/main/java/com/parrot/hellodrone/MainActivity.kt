@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import com.parrot.drone.groundsdk.GroundSdk
 import com.parrot.drone.groundsdk.ManagedGroundSdk
 import com.parrot.drone.groundsdk.Ref
@@ -18,8 +20,14 @@ import com.parrot.drone.groundsdk.device.pilotingitf.Activable
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf
 import com.parrot.drone.groundsdk.facility.AutoConnection
 import com.parrot.drone.groundsdk.stream.GsdkStreamView
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONArray
-import java.net.HttpURLConnection
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.lang.reflect.Type
 import java.net.URL
 
 
@@ -107,7 +115,8 @@ class MainActivity : AppCompatActivity() {
                     val url = "http://192.168.42.1/api/v1/media/medias"
 
                     println("hah")
-                    doInBackground()
+                    //doInBackground()
+                    //getJson()
                     println("hah2")
                 }
                 if (drone?.uid != it.drone?.uid) {
@@ -291,6 +300,7 @@ class MainActivity : AppCompatActivity() {
             } else if (itf.canLand()) {
                 // Land
                 itf.land()
+                //getJson()
             }
         }
     }
@@ -307,12 +317,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun takepicClick() {
         takepicRef?.get()?.let { pic ->
-
+        //upload()
 //            if (pic.canStartPhotoCapture()) {
 //                pic.startPhotoCapture()
 //            } else if (pic.canStopPhotoCapture()) {
 //                pic.stopPhotoCapture()
 //            }
+            getJson()
         }
     }
 
@@ -390,87 +401,149 @@ class MainActivity : AppCompatActivity() {
 
 
 
-    private fun doInBackground(): String {
-        var text: String
-        text = ""
-        var listdata: List<Data>
+//    private fun doInBackground(): String {
+//        var text: String
+//        text = ""
+//        var listdata: List<Data>
+//        val thread = Thread(Runnable {
+//            try {
+//                val connection = URL("http://192.168.42.1/api/v1/media/medias").openConnection() as HttpURLConnection
+//                try{
+//                    connection.connect()
+//                    text = connection.inputStream.use {it.reader().use{reader -> reader.readText()}}
+//
+//                }
+//                finally {
+//                    connection.disconnect()
+//                }
+//                //handleJson(result)
+//                println(text)
+//                           }
+//                catch (e: Exception) {
+//                e.printStackTrace()
+//            }
+//        }
+//        )
+//
+//        thread.start()
+//        listdata = handleJson(text)
+//
+//        return text
+//
+//    }
+
+//    private fun upload(){
+//        val link = "https://ankieta.asuscomm.com/~ola/uploads/nazwaWyslanegoPliku"
+//        val date = "2019-07-26T00:00:00"
+//        val secret = "superProjekt"
+//        uploadMedia(link, date, secret)
+//    }
+//
+    private fun getJson() {
         val thread = Thread(Runnable {
-            try {
-                val connection = URL("http://192.168.42.1/api/v1/media/medias").openConnection() as HttpURLConnection
-                try{
-                    connection.connect()
-                    text = connection.inputStream.use {it.reader().use{reader -> reader.readText()}}
+            val client = OkHttpClient()
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val request = Request.Builder()
+                .url("http://192.168.42.1/api/v1/media/medias")
+                //.url("http://fizyka.umk.pl/~291605/naszybko/medias.json")
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+                val data = response?.body?.string()
+                val gson = GsonBuilder().create()
+                //val dane = gson.fromJson(data, Data::class.java)
+                val collectionType: Type =
+                    object : TypeToken<ArrayList<Data?>?>(){}.type
+                val dane: ArrayList<Data> = gson.fromJson(data, collectionType)
+                dane.toList()
 
-                }
-                finally {
-                    connection.disconnect()
-                }
-                // handleJson(result)
-                println(text)
-                           }
-                catch (e: Exception) {
-                e.printStackTrace()
+
+//                println(response.body?.string())
+                var resulttext = ""
+
+                val x = ""
+                //for(i in 0 until dane.length())
+                val urltodownload = "http://192.168.42.1/"+dane[0].thumbnail
+                resulttext = "Thumbnail:"+urltodownload
+
+                println(resulttext).toString()
+                println(urltodownload)
+
             }
-        }
-        )
-
+        })
         thread.start()
-        //listdata = handleJson(text)
-
-        return text
-
+    val thread2 = Thread(Runnable {
+        println("POBIERANIEee")
+        //download("/storage/emulated/0/Download/kot3.mp4", "http://fizyka.umk.pl/~291605/naszybko/new_rl_op.mp4")
+        //download("/storage/emulated/0/Download/img.", "https://static.toiimg.com/photo/msid-67586673/67586673.jpg?3918697")
+        //download("/storage/emulated/0/Download/dron.mp4", "http://192.168.42.1/data/media/100000090009.MP4")
+        download("/storage/emulated/0/Download/dron2.mp4", "http://192.168.42.1/data/media/100000090009.MP4")
+        println("POBRANOoo")
+    })
+    thread2.start()
     }
 
-    private fun handleJson(jsonString: String): List<Data> {
-        val jsonArray = JSONArray(jsonString)
-        val list = ArrayList<Data>()
-        val list2 = ArrayList<Resources>()
-
-        var x = 0
-        var y = 0
-        while(x < jsonArray.length()) {
-
-            val jsonObject = jsonArray.getJSONObject(x)
-            val temp = jsonObject.getJSONArray("resources")
-
-            while(y < temp.length()){
-                val temp2 = temp.getJSONObject(y)
-
-                list2.add(Resources(
-                    temp2.getString("media_id"),
-                    temp2.getString("resource_id"),
-                    temp2.getString("type"),
-                    temp2.getString("format"),
-                    temp2.getString("datetime"),
-                    temp2.getInt("size"),
-                    temp2.getString("url"),
-                    temp2.getString("storage"),
-                    temp2.getInt("width"),
-                    temp2.getInt("height"),
-                    temp2.getString("thumbnail"),
-                    temp2.getString("video_mode"),
-                    temp2.getString("replay_url"),
-                    temp2.getInt("duration")
-                ))
+    fun download(path: String, link: String) {
+        URL(link).openStream().use { input ->
+            FileOutputStream(File(path)).use { output ->
+                println("POBIERANIE")
+                input.copyTo(output)
+                println("KONIEC")
             }
-
-            list.add(Data(
-                jsonObject.getString("media_id"),
-                jsonObject.getString("type"),
-                jsonObject.getString("datetime"),
-                jsonObject.getInt("size"),
-                jsonObject.getString("video_mode"),
-                jsonObject.getInt("duration"),
-                jsonObject.getString("run_id"),
-                jsonObject.getString("thumbnail"),
-                list2
-            ))
-
-            x++
         }
-        println(list.first().resources.first().url)
-        return list
     }
+
+
+//    private fun handleJson(jsonString: String): List<Data> {
+//        val jsonArray = JSONArray(jsonString)
+//        val list = ArrayList<Data>()
+//        val list2 = ArrayList<Resources>()
+//
+//        var x = 0
+//        var y = 0
+//        while(x < jsonArray.length()) {
+//
+//            val jsonObject = jsonArray.getJSONObject(x)
+//            val temp = jsonObject.getJSONArray("resources")
+//
+//            while(y < temp.length()){
+//                val temp2 = temp.getJSONObject(y)
+//
+//                list2.add(Resources(
+//                    temp2.getString("media_id"),
+//                    temp2.getString("resource_id"),
+//                    temp2.getString("type"),
+//                    temp2.getString("format"),
+//                    temp2.getString("datetime"),
+//                    temp2.getInt("size"),
+//                    temp2.getString("url"),
+//                    temp2.getString("storage"),
+//                    temp2.getInt("width"),
+//                    temp2.getInt("height"),
+//                    temp2.getString("thumbnail"),
+//                    temp2.getString("video_mode"),
+//                    temp2.getString("replay_url"),
+//                    temp2.getInt("duration")
+//                ))
+//            }
+//
+//            list.add(Data(
+//                jsonObject.getString("media_id"),
+//                jsonObject.getString("type"),
+//                jsonObject.getString("datetime"),
+//                jsonObject.getInt("size"),
+//                jsonObject.getString("video_mode"),
+//                jsonObject.getInt("duration"),
+//                jsonObject.getString("run_id"),
+//                jsonObject.getString("thumbnail"),
+//                list2
+//            ))
+//
+//            x++
+//        }
+//        println(list.first().resources.first().url)
+//        return list
+//    }
 
 //    fun sendGet() {
 //        val response = try {
