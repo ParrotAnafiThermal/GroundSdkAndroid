@@ -90,21 +90,28 @@
             android:layout_height="52dp"
             android:orientation="horizontal">
 
+            <Button
+                android:id="@+id/downloadfileBt"
+                android:layout_width="206dp"
+                android:layout_height="wrap_content"
+                android:text="Download file" />
+
+            <Button
+                android:id="@+id/uploadFileBt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Upload file" />
         </LinearLayout>
 
-        <Button
-            android:id="@+id/uploadmedia"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="upload media" />
     </com.parrot.drone.groundsdk.stream.GsdkStreamView>
 
-    <Button
-        android:id="@+id/takeOffLandBt"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:enabled="false"
-        android:text="take off"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        <Button
+            android:id="@+id/takeOffLandBt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="take off"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
