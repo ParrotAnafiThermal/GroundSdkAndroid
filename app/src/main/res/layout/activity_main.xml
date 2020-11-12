@@ -92,7 +92,7 @@
 
             <Button
                 android:id="@+id/downloadfileBt"
-                android:layout_width="206dp"
+                android:layout_width="198dp"
                 android:layout_height="wrap_content"
                 android:text="Download file" />
 

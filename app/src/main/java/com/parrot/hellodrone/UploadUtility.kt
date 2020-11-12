@@ -43,7 +43,10 @@ class UploadUtility(activity: Activity) {
                 val requestBody: RequestBody =
                         MultipartBody.Builder().setType(MultipartBody.FORM)
                                 .addFormDataPart("uploaded_file", fileName,sourceFile.asRequestBody(mimeType.toMediaTypeOrNull()))
+//                                .addFormDataPart("Date", )
+//                                .addFormDataPart("Secret", fileName,sourceFile.asRequestBody(mimeType.toMediaTypeOrNull()))
                                 .build()
+
 
                 val request: Request = Request.Builder().url(serverURL).post(requestBody).build()
 
@@ -76,9 +79,9 @@ class UploadUtility(activity: Activity) {
     }
 
     fun showToast(message: String) {
-        activity.runOnUiThread {
+        //activity.runOnUiThread {
             Toast.makeText( activity, message, Toast.LENGTH_LONG ).show()
-        }
+        //}
     }
 
     fun toggleProgressDialog(show: Boolean) {

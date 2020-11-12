@@ -1,12 +1,16 @@
 package com.parrot.hellodrone
 
+import android.app.Activity
 import android.content.Context
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.MainThread
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import com.parrot.drone.groundsdk.GroundSdk
 import com.parrot.drone.groundsdk.ManagedGroundSdk
@@ -21,9 +25,9 @@ import com.parrot.drone.groundsdk.device.pilotingitf.Activable
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf
 import com.parrot.drone.groundsdk.facility.AutoConnection
 import com.parrot.drone.groundsdk.stream.GsdkStreamView
+import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -83,7 +87,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var uploadFileBt: Button
 
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -101,12 +104,10 @@ class MainActivity : AppCompatActivity() {
         uploadFileBt.setOnClickListener {uploadFileClick()}
         //takepicBt.setOnClickListener {takepicClick()}
 
-
         droneStateTxt.text = DeviceState.ConnectionState.DISCONNECTED.toString()
         rcStateTxt.text = DeviceState.ConnectionState.DISCONNECTED.toString()
 
         groundSdk = ManagedGroundSdk.obtainSession(this)
-
 
     }
 
@@ -311,28 +312,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-//    private class MainCameraRefRunnable:Runnable {
-//        private val mainCameraRef:Ref<MainCamera> = null
-//        internal fun setMainCameraRef(mainCameraRef:Ref<MainCamera>) {
-//            this.mainCameraRef = mainCameraRef
-//        }
-//        public override fun run() {
-//            if (mainCameraRef != null) mainCameraRef.close()
-//        }
-//    }
-
-
-    private fun downloadFileClick() {
-        getJson()
-        Toast.makeText(this@MainActivity, "File downloaded successfully!", Toast.LENGTH_SHORT).show()
-    }
-    private fun uploadFileClick() {
-        readFile()
-        Toast.makeText(this@MainActivity, "File uploaded successfully!", Toast.LENGTH_SHORT).show()
-        //uploadFile()
-    }
-
-
     //Resets remote user interface part
     private fun resetRcUi() {
         rcStateTxt.text = DeviceState.ConnectionState.DISCONNECTED.toString()
@@ -374,28 +353,37 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-//    private fun upload(){
-//        val link = "https://ankieta.asuscomm.com/~ola/uploads/nazwaWyslanegoPliku"
-//        val date = "2019-07-26T00:00:00"
-//        val secret = "superProjekt"
-//        uploadMedia(link, date, secret)
-//    }
-//
+    /** ---------------------------------------------------------------------------------- **/
+    /** DOWNLOAD AND UPLOAD **/
+
+    private fun downloadFileClick() {
+        getJson()
+        Toast.makeText(this@MainActivity, "File downloaded successfully!", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun uploadFileClick() {
+        //Toast.makeText(this@MainActivity, "File uploaded successfully!", Toast.LENGTH_SHORT).show()
+        val jsondoprzeslania = "{\"Link\": \"https://ankieta.asuscomm.com/~ola/uploads/video2.mp4\",\"Date\": \"2020-11-12T00:00:00\",\"Secret\": \"superProjekt\"}"
+
+        saveJSON("https://ankieta.asuscomm.com:5011/api/todoitems", jsondoprzeslania)
+        UploadUtility(this@MainActivity).uploadFile("/storage/emulated/0/Download/video2.mp4", "https://ankieta.asuscomm.com/~ola/uploads/video2.mp4")
+    }
+
     private fun getJson() {
         val thread = Thread(Runnable {
             val client = OkHttpClient()
             val mediaType = "application/json; charset=utf-8".toMediaType()
             val request = Request.Builder()
-                //.url("http://192.168.42.1/api/v1/media/medias")
-                .url("http://fizyka.umk.pl/~291605/naszybko/medias.json")
-                .build()
+                    .url("http://192.168.42.1/api/v1/media/medias")
+                    //.url("http://fizyka.umk.pl/~291605/naszybko/medias.json")
+                    .build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) throw IOException("Unexpected code $response")
                 val data = response?.body?.string()
                 val gson = GsonBuilder().create()
                 //val dane = gson.fromJson(data, Data::class.java)
                 val collectionType: Type =
-                    object : TypeToken<ArrayList<Data?>?>(){}.type
+                        object : TypeToken<ArrayList<Data?>?>(){}.type
                 val dane: ArrayList<Data> = gson.fromJson(data, collectionType)
                 dane.toList()
 
@@ -412,17 +400,54 @@ class MainActivity : AppCompatActivity() {
             }
         })
         thread.start()
-    val thread2 = Thread(Runnable {
-        println("POBIERANIEee")
-        //download("/storage/emulated/0/Download/ahA.mp4", "http://fizyka.umk.pl/~291605/naszybko/new_rl_op.mp4")
-        download("/storage/emulated/0/Download/medias.json", "https://www.w3.org/TR/PNG/iso_8859-1.txt")
-        //download("/storage/emulated/0/Download/img.", "https://static.toiimg.com/photo/msid-67586673/67586673.jpg?3918697")
-        //download("/storage/emulated/0/Download/dron.mp4", "http://192.168.42.1/data/media/100000090009.MP4")
-        //download("/storage/emulated/0/Download/dron2.mp4", "http://192.168.42.1/data/media/100000090009.MP4")
-        println("POBRANOoo")
-    })
-    thread2.start()
+        val thread2 = Thread(Runnable {
+            println("POBIERANIEee")
+            //download("/storage/emulated/0/Download/ahA.mp4", "http://fizyka.umk.pl/~291605/naszybko/new_rl_op.mp4")
+            //download("/storage/emulated/0/Download/medias.json", "https://www.w3.org/TR/PNG/iso_8859-1.txt")
+            download("/storage/emulated/0/Download/kitku.jpg", "https://static.toiimg.com/photo/msid-67586673/67586673.jpg?3918697")
+            //download("/storage/emulated/0/Download/100000130013.mp4", "http://192.168.42.1/data/media/100000130013.MP4")
+            //download("/storage/emulated/0/Download/dron2.mp4", "http://192.168.42.1/data/media/100000090009.MP4")
+            println("POBRANOoo")
+        })
+        thread2.start()
     }
+
+    fun saveJSON(url: String, json: String){
+        "beekaa"
+        var result = ""
+        val thread = Thread(Runnable {
+            val client = OkHttpClient()
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val request = Request.Builder()
+                    .url(url)
+                    .post(json.toRequestBody(mediaType))
+                    .build()
+            client.newCall(request).enqueue(object: Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    //showToast("No connection with database")
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    if(!response.isSuccessful) throw IOException("Unexpected code $response")
+                    val data = response?.body?.string()
+                    val obj: JsonObject = Gson().fromJson(data, JsonObject::class.java)
+                    result = obj["message"].asString
+                    //showToast(result);
+                }
+            })
+        })
+        println("znowu dziala hihi")
+    }
+
+//    fun showToast(toast: String?){
+//        runOnUiThread{
+//            Toast.makeText(
+//                    this@MainActivity,
+//                    toast,
+//                    Toast.LENGTH_SHORT
+//            ).show()
+//        }
+//    }
+
 
     fun download(path: String, link: String) {
         URL(link).openStream().use { input ->
@@ -460,35 +485,35 @@ class MainActivity : AppCompatActivity() {
 //                setOf(Environment.MEDIA_MOUNTED, Environment.MEDIA_MOUNTED_READ_ONLY)
 //    }
 
-    private fun storeFileInInternalStorage(selectedFile: File, internalStorageFileName: String) {
-        val inputStream = FileInputStream(selectedFile) // 1
-        val outputStream = application.openFileOutput(internalStorageFileName, Context.MODE_PRIVATE)  // 2
-        val buffer = ByteArray(1024)
-        inputStream.use {  // 3
-            while (true) {
-                val byeCount = it.read(buffer)  // 4
-                if (byeCount < 0) break
-                outputStream.write(buffer, 0, byeCount)  // 5
-            }
-            outputStream.close()  // 6
-        }
-    }
-    fun readFile() {
-        val thread3 = Thread(Runnable {
-            println("wczytuję plik")
-            val selectedVideoFilePath =
-                "/storage/emulated/0/Download/medias.json"  // 1
-            val selectedVideoFile : File = File(selectedVideoFilePath)  // 2
-            val selectedVideoFileExtension : String = selectedVideoFile.extension  // 3
-            val internalStorageVideoFileName : String =
-                UUID.randomUUID().toString().plus(selectedVideoFileExtension)  // 4
-            storeFileInInternalStorage(selectedVideoFile, internalStorageVideoFileName)  // 5
-            println("wczytano plik")
-            println(selectedVideoFile)
-            println(internalStorageVideoFileName)
-            println(selectedVideoFileExtension)
-            println(selectedVideoFilePath)
-        })
-        thread3.start()
-    }
+//    private fun storeFileInInternalStorage(selectedFile: File, internalStorageFileName: String) {
+//        val inputStream = FileInputStream(selectedFile) // 1
+//        val outputStream = application.openFileOutput(internalStorageFileName, Context.MODE_PRIVATE)  // 2
+//        val buffer = ByteArray(1024)
+//        inputStream.use {  // 3
+//            while (true) {
+//                val byeCount = it.read(buffer)  // 4
+//                if (byeCount < 0) break
+//                outputStream.write(buffer, 0, byeCount)  // 5
+//            }
+//            outputStream.close()  // 6
+//        }
+//    }
+//    fun readFile() {
+//        val thread3 = Thread(Runnable {
+//            println("wczytuję plik")
+//            val selectedVideoFilePath =
+//                "/storage/emulated/0/Download/medias.json"  // 1
+//            val selectedVideoFile : File = File(selectedVideoFilePath)  // 2
+//            val selectedVideoFileExtension : String = selectedVideoFile.extension  // 3
+//            val internalStorageVideoFileName : String =
+//                UUID.randomUUID().toString().plus(selectedVideoFileExtension)  // 4
+//            storeFileInInternalStorage(selectedVideoFile, internalStorageVideoFileName)  // 5
+//            println("wczytano plik")
+//            println(selectedVideoFile)
+//            println(internalStorageVideoFileName)
+//            println(selectedVideoFileExtension)
+//            println(selectedVideoFilePath)
+//        })
+//        thread3.start()
+//    }
 }
