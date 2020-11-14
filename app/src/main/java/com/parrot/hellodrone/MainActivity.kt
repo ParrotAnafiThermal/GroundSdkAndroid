@@ -20,11 +20,16 @@ import com.parrot.drone.groundsdk.device.Drone
 import com.parrot.drone.groundsdk.device.RemoteControl
 import com.parrot.drone.groundsdk.device.instrument.BatteryInfo
 import com.parrot.drone.groundsdk.device.peripheral.StreamServer
+import com.parrot.drone.groundsdk.device.peripheral.ThermalCamera
+import com.parrot.drone.groundsdk.device.peripheral.ThermalControl
+import com.parrot.drone.groundsdk.device.peripheral.camera.Camera
 import com.parrot.drone.groundsdk.device.peripheral.stream.CameraLive
 import com.parrot.drone.groundsdk.device.pilotingitf.Activable
 import com.parrot.drone.groundsdk.device.pilotingitf.ManualCopterPilotingItf
 import com.parrot.drone.groundsdk.facility.AutoConnection
 import com.parrot.drone.groundsdk.stream.GsdkStreamView
+import com.parrot.drone.groundsdk.value.EnumSetting
+import com.parrot.drone.sdkcore.arsdk.ArsdkFeatureCamera
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -58,7 +63,9 @@ class MainActivity : AppCompatActivity() {
     /** Current drone live stream. */
     private var liveStream: CameraLive? = null
     /** Take pic */
-    //private var uploadmediaRef: Ref<>? = null
+    //private var changeCameraRef: Ref<ThermalCamera>? = null
+    
+
 
     //Remote control:
     /** Current remote control instance. */
@@ -85,6 +92,8 @@ class MainActivity : AppCompatActivity() {
     //private lateinit var takepicBt: Button
     private lateinit var downloadFileBt: Button
     private lateinit var uploadFileBt: Button
+    /** Switch camera */
+    //private lateinit var changeCameraBt: Button
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -99,9 +108,11 @@ class MainActivity : AppCompatActivity() {
         takeOffLandBt = findViewById(R.id.takeOffLandBt)
         downloadFileBt = findViewById(R.id.downloadfileBt)
         uploadFileBt = findViewById(R.id.uploadFileBt)
+        //changeCameraBt = findViewById(R.id.changeCameraBt)
         takeOffLandBt.setOnClickListener {onTakeOffLandClick()}
         downloadFileBt.setOnClickListener {downloadFileClick()}
         uploadFileBt.setOnClickListener {uploadFileClick()}
+        //changeCameraBt.setOnClickListener {changeCameraClick()}
         //takepicBt.setOnClickListener {takepicClick()}
 
         droneStateTxt.text = DeviceState.ConnectionState.DISCONNECTED.toString()
@@ -120,13 +131,6 @@ class MainActivity : AppCompatActivity() {
             it?.let{
                 if (it.status != AutoConnection.Status.STARTED) {
                     it.start()
-                   // sendGet()
-                    val url = "http://192.168.42.1/api/v1/media/medias"
-
-                    println("hah")
-                    //doInBackground()
-                    //getJson()
-                    println("hah2")
                 }
                 if (drone?.uid != it.drone?.uid) {
                     if(drone != null) {
@@ -357,19 +361,20 @@ class MainActivity : AppCompatActivity() {
     /** DOWNLOAD AND UPLOAD **/
 
     private fun downloadFileClick() {
-        getJson()
+        getJSON()
         Toast.makeText(this@MainActivity, "File downloaded successfully!", Toast.LENGTH_SHORT).show()
     }
 
     private fun uploadFileClick() {
-        //Toast.makeText(this@MainActivity, "File uploaded successfully!", Toast.LENGTH_SHORT).show()
-        val jsondoprzeslania = "{\"Link\": \"https://ankieta.asuscomm.com/~ola/uploads/video2.mp4\",\"Date\": \"2020-11-12T00:00:00\",\"Secret\": \"superProjekt\"}"
+        Toast.makeText(this@MainActivity, "File uploaded successfully!", Toast.LENGTH_SHORT).show()
+        val jsondoprzeslania = "{\"Link\": \"https://ankieta.asuscomm.com/~ola/uploads/zdjecie.jpg\",\"Date\": \"2020-11-12T00:00:00\",\"Secret\": \"superProjekt\"}"
+        println(jsondoprzeslania)
 
-        saveJSON("https://ankieta.asuscomm.com:5011/api/todoitems", jsondoprzeslania)
-        UploadUtility(this@MainActivity).uploadFile("/storage/emulated/0/Download/video2.mp4", "https://ankieta.asuscomm.com/~ola/uploads/video2.mp4")
+        postJSON("http://ankieta.asuscomm.com:5010/api/todoitems", jsondoprzeslania)
+        UploadUtility(this@MainActivity).uploadFile("/storage/emulated/0/Download/zdjecie.jpg", "https://ankieta.asuscomm.com/~ola/uploads/zdjecie.jpg")
     }
 
-    private fun getJson() {
+    private fun getJSON() {
         val thread = Thread(Runnable {
             val client = OkHttpClient()
             val mediaType = "application/json; charset=utf-8".toMediaType()
@@ -404,7 +409,7 @@ class MainActivity : AppCompatActivity() {
             println("POBIERANIEee")
             //download("/storage/emulated/0/Download/ahA.mp4", "http://fizyka.umk.pl/~291605/naszybko/new_rl_op.mp4")
             //download("/storage/emulated/0/Download/medias.json", "https://www.w3.org/TR/PNG/iso_8859-1.txt")
-            download("/storage/emulated/0/Download/kitku.jpg", "https://static.toiimg.com/photo/msid-67586673/67586673.jpg?3918697")
+            download("/storage/emulated/0/Download/100000130013.mp4", "http://192.168.42.1/data/media/100000130013.MP4")
             //download("/storage/emulated/0/Download/100000130013.mp4", "http://192.168.42.1/data/media/100000130013.MP4")
             //download("/storage/emulated/0/Download/dron2.mp4", "http://192.168.42.1/data/media/100000090009.MP4")
             println("POBRANOoo")
@@ -412,8 +417,7 @@ class MainActivity : AppCompatActivity() {
         thread2.start()
     }
 
-    fun saveJSON(url: String, json: String){
-        "beekaa"
+    fun postJSON(url: String, json: String){
         var result = ""
         val thread = Thread(Runnable {
             val client = OkHttpClient()
@@ -424,30 +428,20 @@ class MainActivity : AppCompatActivity() {
                     .build()
             client.newCall(request).enqueue(object: Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    //showToast("No connection with database")
+                    println("No connection with database")
                 }
                 override fun onResponse(call: Call, response: Response) {
                     if(!response.isSuccessful) throw IOException("Unexpected code $response")
                     val data = response?.body?.string()
                     val obj: JsonObject = Gson().fromJson(data, JsonObject::class.java)
-                    result = obj["message"].asString
-                    //showToast(result);
+                    //result = obj["message"].asString
+                    //println("WYNIKKK: " + result);
                 }
             })
         })
+        thread.run()
         println("znowu dziala hihi")
     }
-
-//    fun showToast(toast: String?){
-//        runOnUiThread{
-//            Toast.makeText(
-//                    this@MainActivity,
-//                    toast,
-//                    Toast.LENGTH_SHORT
-//            ).show()
-//        }
-//    }
-
 
     fun download(path: String, link: String) {
         URL(link).openStream().use { input ->
@@ -516,4 +510,27 @@ class MainActivity : AppCompatActivity() {
 //        })
 //        thread3.start()
 //    }
+
+
+    /**-------------------------------------------------**/
+    /** CAMERA **/
+    /**-------------------------------------------------**/
+
+    private fun changeCameraClick() {
+        //drone.getPeripheral(ThermalControl.Mode.STANDARD)
+        //EnumSetting<ThermalControl.Mode> =
+        //ThermalControl.Mode.STANDARD;
+
+        //drone?.getPeripheral(ThermalCamera)
+
+//                changeCameraRef?.get()?.let { itf ->
+//            if (itf.()) {
+//                itf.takeOff()
+//            } else if (itf.canLand()) {
+//                // Land
+//                itf.land()
+//                //getJson()
+//            }
+//        }
+    }
 }

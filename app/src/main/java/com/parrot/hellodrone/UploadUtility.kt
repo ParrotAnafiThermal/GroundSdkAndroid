@@ -22,7 +22,9 @@ class UploadUtility(activity: Activity) {
     val client = OkHttpClient()
 
     fun uploadFile(sourceFilePath: String, uploadedFileName: String? = null) {
+        println("rozpoczecie przesylania")
         uploadFile(File(sourceFilePath), uploadedFileName)
+        println("koniec przesylania")
     }
 
     fun uploadFile(sourceFileUri: Uri, uploadedFileName: String? = null) {
@@ -34,7 +36,7 @@ class UploadUtility(activity: Activity) {
         Thread {
             val mimeType = getMimeType(sourceFile);
             if (mimeType == null) {
-                Log.e("file error", "Not able to get mime type")
+                Log.e("File error", "Not able to get mime type")
                 return@Thread
             }
             val fileName: String = if (uploadedFileName == null)  sourceFile.name else uploadedFileName
@@ -42,16 +44,13 @@ class UploadUtility(activity: Activity) {
             try {
                 val requestBody: RequestBody =
                         MultipartBody.Builder().setType(MultipartBody.FORM)
-                                .addFormDataPart("uploaded_file", fileName,sourceFile.asRequestBody(mimeType.toMediaTypeOrNull()))
-//                                .addFormDataPart("Date", )
-//                                .addFormDataPart("Secret", fileName,sourceFile.asRequestBody(mimeType.toMediaTypeOrNull()))
+                                .addFormDataPart("uploaded_file",
+                                        fileName,sourceFile.asRequestBody(mimeType.toMediaTypeOrNull()))
                                 .build()
-
+                println("REQUEST BODY")
 
                 val request: Request = Request.Builder().url(serverURL).post(requestBody).build()
-
                 val response: Response = client.newCall(request).execute()
-
                 if (response.isSuccessful) {
                     Log.d("File upload","success, path: $serverUploadDirectoryPath$fileName")
                     showToast("File uploaded successfully at $serverUploadDirectoryPath$fileName")

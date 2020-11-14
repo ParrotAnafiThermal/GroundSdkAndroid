@@ -46,32 +46,32 @@
         </LinearLayout>
 
         <LinearLayout
-                android:layout_width="match_parent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/labelRemoteControl"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:orientation="horizontal">
+                android:layout_weight="1"
+                android:text="Remote" />
 
             <TextView
-                    android:id="@+id/labelRemoteControl"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:text="Remote"/>
+                android:id="@+id/rcStateTxt"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="2"
+                android:text="state"
+                android:textAlignment="center" />
 
             <TextView
-                    android:id="@+id/rcStateTxt"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="2"
-                    android:text="state"
-                    android:textAlignment="center"/>
-
-            <TextView
-                    android:id="@+id/rcBatteryTxt"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:text=""
-                    android:textAlignment="textEnd"/>
+                android:id="@+id/rcBatteryTxt"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text=""
+                android:textAlignment="textEnd" />
 
         </LinearLayout>
     </LinearLayout>
@@ -82,17 +82,17 @@
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/takeOffLandBt"
         app:layout_constraintTop_toBottomOf="@id/info"
-        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintVertical_bias="1.0"
         tools:layout_editor_absoluteX="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="52dp"
+            android:layout_height="36dp"
             android:orientation="horizontal">
 
             <Button
                 android:id="@+id/downloadfileBt"
-                android:layout_width="198dp"
+                android:layout_width="202dp"
                 android:layout_height="wrap_content"
                 android:text="Download file" />
 
@@ -102,11 +102,12 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Upload file" />
+
         </LinearLayout>
 
     </com.parrot.drone.groundsdk.stream.GsdkStreamView>
 
-        <Button
+    <Button
             android:id="@+id/takeOffLandBt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
